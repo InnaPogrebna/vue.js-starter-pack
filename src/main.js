@@ -16,7 +16,8 @@ const routes = [
 
 const router = new VueRouter({
   routes, // short for routes: routes
-  mode: 'history'
+  mode: 'history',
+  base: process.env.BASE_URL,
 })
 
 /* eslint-disable no-new */
@@ -26,3 +27,4 @@ new Vue({
   template: '<App/>',
   components: { App }
 }).$mount('#app')
+

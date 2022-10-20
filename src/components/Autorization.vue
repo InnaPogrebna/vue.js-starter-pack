@@ -48,44 +48,53 @@
     <div>
       <span
         :class="{
-        autorization__form__error: isError,
-        autorization__form__notification: !isError,
-      }"
-      >It's not correct username or password</span>
+          autorization__form__error: isError,
+          autorization__form__notification: !isError
+        }"
+        >It's not correct username or password</span
+      >
     </div>
   </div>
 </template>
 
 <script>
 export default {
-    name: "autorization",
-    props: {
+  name: "autorization",
+  props: {
     isAuth: {
       type: Boolean,
-      default: false,
-    },
+      default: false
+    }
   },
-    data() {
-        return {
-            username: "",
-            password: "",
-            isAuthProp: this.isAuth,
-            isError: false,
-        };
-    },
-    methods: {
-        auth() {
-            if (this.username === "duck_admin" && this.password === "Tfw54dv7H") {
-                this.isAuthProp = true;
-                
-            }
-            else {
-                this.isAuthProp  = false;
-                this.isError = true;
-            }
-            this.$emit('getAuth', this.isAuthProp)
-        }
-    },
+  data() {
+    return {
+      username: "",
+      password: "",
+      isAuthProp: this.isAuth,
+      isError: false
+    };
+  },
+  methods: {
+    auth() {
+      fetch("http://localhost:3000/autorization", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          username: this.username,
+          password: this.password
+        })
+      });
+      if (this.username === "duck_admin" && this.password === "Tfw54dv7H") {
+        this.isAuthProp = true;
+      } else {
+        this.isAuthProp = false;
+        this.isError = true;
+      }
+     this.$emit("getAuth", this.isAuthProp);
+    }
+  }
 };
 </script>
 

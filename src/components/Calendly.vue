@@ -1,6 +1,6 @@
 <template>
   <div id="about">
-    Main
+    Calendly
   </div>
 </template>
 
