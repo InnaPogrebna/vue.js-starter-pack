@@ -6,12 +6,12 @@ import VueRouter from 'vue-router'
 
 Vue.use(VueRouter)
 
-import Hello from './components/Hello'
-import About from './components/About'
+import Autorization from './components/Autorization'
+import Calendly from './components/Calendly'
 
 const routes = [
-	{ path: '/', component: Hello },
-	{ path: '/about', component: About }
+	{ path: '/', component: Autorization },
+  { path: '/calendly', component: Calendly }
 ]
 
 const router = new VueRouter({
