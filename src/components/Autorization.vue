@@ -1,6 +1,6 @@
 <template>
   <div class="autorization">
-    <h2 class="autorization__title">Autorization</h2>
+    <h2 class="autorization__title">Authorization</h2>
     <span class="autorization__text">Please authorize</span>
     <form class="autorization__form" @submit.prevent="auth">
       <div class="input-group flex-nowrap autorization__form__item">
@@ -41,10 +41,6 @@
         Submit
       </button>
     </form>
-    <!-- <div v-if="isAuth">
-      <span>{{ username }}</span>
-      <span>{{ password }}</span>
-    </div> -->
     <div>
       <span
         :class="{
@@ -58,6 +54,7 @@
 </template>
 
 <script>
+import { reactive } from "vue";
 export default {
   name: "autorization",
   props: {
@@ -74,31 +71,38 @@ export default {
       isError: false
     };
   },
+  mounted() {
+    this.$router.push("/autorization");
+  },
   methods: {
-    auth() {
-      fetch("http://localhost:3000/autorization", {
+    async auth() {
+      const data = reactive({
+        username: this.username,
+        password: this.password
+      });
+      let response = await fetch("http://127.0.0.1:7000/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          username: this.username,
-          password: this.password
-        })
+        body: JSON.stringify(data)
       });
-      if (this.username === "duck_admin" && this.password === "Tfw54dv7H") {
+      var res = await response.json();
+      if (typeof res.token !== "undefined") {
         this.isAuthProp = true;
+        localStorage["token"] = res.token;
       } else {
         this.isAuthProp = false;
         this.isError = true;
       }
-     this.$emit("getAuth", this.isAuthProp);
+
+      this.$emit("getAuth", this.isAuthProp);
+      this.$router.push("/calendly");
     }
   }
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
 .autorization {
   height: 100vh;
