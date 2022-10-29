@@ -47,13 +47,14 @@
           autorization__form__error: isError,
           autorization__form__notification: !isError
         }"
-        >It's not correct username or password</span
+        >{{ message }}</span
       >
     </div>
   </div>
 </template>
 
 <script>
+import { mapMutations } from "vuex";
 import { reactive } from "vue";
 export default {
   name: "autorization",
@@ -68,11 +69,12 @@ export default {
       username: "",
       password: "",
       isAuthProp: this.isAuth,
-      isError: false
+      isError: false,
+      message: ""
     };
   },
   mounted() {
-    this.$router.push("/autorization");
+    localStorage.removeItem("token");
   },
   methods: {
     async auth() {
@@ -88,24 +90,28 @@ export default {
         body: JSON.stringify(data)
       });
       var res = await response.json();
-      if (typeof res.token !== "undefined") {
+      console.log(res);
+      if (typeof res.data.token !== "undefined") {
         this.isAuthProp = true;
-        localStorage["token"] = res.token;
+        this.isError = false;
+        this.$router.push("/calendly");
+        localStorage["token"] = res.data.token;
       } else {
+        this.message = res.data.message;
         this.isAuthProp = false;
         this.isError = true;
       }
-
-      this.$emit("getAuth", this.isAuthProp);
-      this.$router.push("/calendly");
+      // await this.setTokenStore(res.data.token);
+      // await this.$emit("getAuth", this.isAuthProp);
     }
   }
+  // ...mapMutations(['setTokenStore'])
 };
 </script>
 
 <style scoped lang="scss">
 .autorization {
-  height: 100vh;
+  height: 90vh;
   display: flex;
   flex-direction: column;
   justify-content: center;

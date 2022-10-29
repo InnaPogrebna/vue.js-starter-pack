@@ -25,15 +25,60 @@
             />
           </div>
         </div>
+        <div class="row">
+          <div class="col">
+            <input
+              type="text"
+              v-model="token"
+              class="form-control"
+              placeholder="Enter token"
+              aria-label="token"
+            />
+          </div>
+        </div>
+        <!-- <div class="row">
+          <div class="col">
+            <input
+              type="text"
+              v-model="login"
+              class="form-control"
+              placeholder="Enter Login"
+              aria-label="login"
+            />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
+            <input
+              type="text"
+              v-model="password"
+              class="form-control"
+              placeholder="Enter Password"
+              aria-label="password"
+            />
+          </div>
+        </div> -->
         <button
           type="submit"
           class="btn btn-primary autorization__form__button calendly__btn calendly__btn-center"
           :class="{
-            disabled: first_name.length === 0 || last_name.length === 0
+            disabled:
+              first_name.length === 0 ||
+              last_name.length === 0 ||
+              token.length === 0
           }"
         >
           Add employee
         </button>
+        <!-- <div>
+          <span
+            :class="{
+              error: isError,
+              notification: !isError
+            }"
+            >{{ message }}</span
+          >
+        </div> -->
       </form>
       <form
         class="calendly__autorization calendly__list-block"
@@ -44,7 +89,7 @@
           <div class="col">
             <input
               type="text"
-              v-model="meeting"
+              v-model="newMeeting"
               class="form-control"
               placeholder="Enter meetting"
               aria-label="Enter meeting"
@@ -55,7 +100,7 @@
           type="submit"
           class="btn btn-primary autorization__form__button calendly__btn calendly__btn-center"
           :class="{
-            disabled: meeting.length === 0
+            disabled: newMeeting.length === 0
           }"
         >
           Add meeting
@@ -72,6 +117,7 @@
               class="form-select"
               v-model="employee"
               aria-label="Default select example"
+              @change="getSelectedEmployee"
             >
               <option value="" disabled selected>Select employee</option>
               <option v-for="(employee, index) of this.employees" :key="index"
@@ -112,12 +158,25 @@
       </div>
       <div class="calendly__meets calendly__list-block">
         <h3 class="calendly__autorization__form-title">Choose meeting</h3>
-        <select class="form-select" aria-label="Default select example">
+        <select
+          class="form-select"
+          aria-label="Default select example"
+          @change="getMeetings"
+          v-model="meeting"
+        >
           <option value="" disabled selected>Select meeting</option>
-          <option v-for="(meeting, index) of this.meetings" :key="index">{{
-            meeting
+          <option v-for="(meeting, index) of meetings" :key="index">{{
+            meeting.name
           }}</option>
         </select>
+        <button
+          type="button"
+          class="btn btn-primary autorization__form__button calendly__btn-center "
+        >
+          <a :href="`${calendlyLink}`" target="_blank" class="calendly__link"
+            >Link meeting</a
+          >
+        </button>
       </div>
       <div class="calendly__list-block">
         <button
@@ -128,113 +187,339 @@
         </button>
       </div>
     </div>
+    <div
+      class="message"
+      :class="{
+        message__visible: isMessage,
+        message__hide: !isMessage
+      }"
+    >
+      <p class="message__text">{{ notification }}</p>
+    </div>
   </div>
 </template>
 
 <script>
-// import { mapState, mapMutations } from 'vuex'
+import { reactive } from "vue";
 export default {
   name: "Calendly",
-  //   props: {
-  //   dataEmployees: {
-  //     type: Array,
-  //     default() {
-  //       return []
-  //     },
-  //   }
-  // },
   data() {
     return {
       first_name: "",
       last_name: "",
+      employee_id: 0,
+      token: "",
+      // login: "",
+      // password: "",
       meeting: "",
-      employee: "",
+      newMeeting: "",
+      employee: {},
       newEmployee: "",
       index: 0,
       employees: [],
-      meetings: []
+      meetings: [],
+      uriEmployee: "",
+      calendlyToken: "",
+      isError: false,
+      message: "",
+      notification: "",
+      isMessage: false,
+      calendlyLink: ""
     };
   },
-  created() {
-    this.employees = JSON.parse(localStorage.getItem("employees") || "[]");
-    this.meetings = JSON.parse(localStorage.getItem("meetings") || "[]");
+
+  async created() {
+    let requestUser = await fetch(
+      "http://127.0.0.1:7000/api/user/getUserInfo",
+      {
+        method: "GET",
+        headers: {
+          Authorization: "Bearer " + localStorage["token"]
+        }
+      }
+    );
+    const req = await requestUser.json();
+    this.employees = req.data[1];
+    if (req.token === false) {
+      this.$router.push("/authorization");
+    } else {
+      // this.calendly = true;
+    }
+    // this.employees = JSON.parse(localStorage.getItem("employees") || "[]");
+    // this.meetings = JSON.parse(localStorage.getItem("meetings") || "[]");
   },
-    mounted() {
+  async mounted() {
     this.$router.push("/calendly");
   },
-  //   computed: {
-  //   // ...mapState(['data']),
-  // },
   methods: {
-    addEmployees() {
-      if (this.first_name === "" || this.last_name === "") {
-        return;
-      }
-      this.employees = [
-        ...this.employees,
+    async addEmployees() {
+      const newData = reactive({
+        employee_id: this.employees.length + 1,
+        first_name: this.first_name,
+        last_name: this.last_name,
+        user_token: this.token
+        // login: this.login,
+        // password: this.password
+      });
+
+      const response = await fetch(
+        "http://127.0.0.1:7000/api/employees/addEmployees",
         {
-          first_name: this.first_name,
-          last_name: this.last_name
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ ...newData, token: localStorage["token"] })
         }
-      ];
-      this.first_name = "";
-      this.last_name = "";
-      localStorage["employees"] = JSON.stringify(this.employees);
-      // this.setEmployees(this.employees)
-    },
-    addMeeting() {
-      if (this.meeting === "") {
-        return;
-      }
-      this.meetings = [...this.meetings, this.meeting];
-      this.meeting = "";
-      localStorage["meetings"] = JSON.stringify(this.meetings);
-    },
-    removeEmployee() {
-      const arrayEmployee = this.employee.trim().split(/\s+/);
-      this.employees = this.employees.filter(
-        employee =>
-          employee.first_name !== arrayEmployee[0] &&
-          employee.last_name !== arrayEmployee[1]
       );
-      console.log(this.employees);
-      localStorage["employees"] = JSON.stringify(this.employees);
+
+      const res = await response.json();
+      await this.checkEmployee(res, newData);
+
+      // localStorage["employees"] = JSON.stringify(this.employees);
     },
-    updateEmployee() {
+    checkEmployee(res, newData) {
+      if (res.data.error === false) {
+        this.isError = false;
+        this.message = "";
+        this.employees = [...this.employees, newData];
+        this.isMessage = true;
+        this.notification = res.data.message;
+
+        this.first_name = "";
+        this.last_name = "";
+        this.token = "";
+      } else {
+        this.isError = true;
+        this.isMessage = true;
+        this.notification = res.data.message;
+      }
+
+      setTimeout(() => {
+        this.isMessage = false;
+        this.first_name = "";
+        this.last_name = "";
+        this.token = "";
+      }, 2000);
+    },
+    // addMeeting() {
+    //   if (this.meeting === "") {
+    //     return;
+    //   }
+    //   this.meetings = [...this.meetings, this.meeting];
+    //   this.meeting = "";
+    //   localStorage["meetings"] = JSON.stringify(this.meetings);
+    // },
+
+    async getSelectedEmployee() {
       const arrayEmployee = this.employee.trim().split(/\s+/);
+      const selectEmployee = this.employees.filter(
+        item =>
+          item.first_name === arrayEmployee[0] &&
+          item.last_name === arrayEmployee[1]
+      );
+
+      this.calendlyToken = selectEmployee[0].user_token;
+      if (this.calendlyToken) {
+        const response = await fetch("https://api.calendly.com/users/me", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + this.calendlyToken
+          }
+        });
+        const res = await response.json();
+        if (res.title === "Unauthenticated") {
+          this.isMessage = true;
+          this.notification = `Error token`;
+          this.meetings = [];
+
+          setTimeout(() => {
+            this.isMessage = false;
+          }, 2000);
+        } else {
+          this.uriEmployee = await res.resource.uri;
+          return await this.getMeetings();
+        }
+      }
+    },
+
+    async getMeetings() {
+      if (this.uriEmployee) {
+        const responseUser = await fetch(
+          `https://api.calendly.com/event_types?user=${this.uriEmployee}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + this.calendlyToken
+            }
+          }
+        );
+
+        const calendlyEvents = await responseUser.json();
+        const calMeeting = await calendlyEvents.collection.map(item => {
+          if (item.name === this.meeting) {
+            return item.scheduling_url.trim().split(/\s+/);
+          }
+          return "";
+        });
+        const link = await calMeeting.filter(str => str.length !== 0).join();
+        this.calendlyLink = await link;
+        this.meetings = await calendlyEvents.collection;
+      } else {
+        this.meetings = [];
+      }
+    },
+
+    async removeEmployee() {
+      let arrayEmployee = this.employee.trim().split(/\s+/);
+      const removeEmployee = this.employees.filter(
+        item =>
+          item.first_name === arrayEmployee[0] &&
+          item.last_name === arrayEmployee[1]
+      );
+      // const removeEmployee = this.getSelectEmployee();
+      console.log("removeEmployee", removeEmployee);
+
+      const response = await fetch(
+        "http://127.0.0.1:7000/api/employees/removeEmployees",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...removeEmployee,
+            token: localStorage["token"]
+          })
+        }
+      );
+
+      const res = await response.json();
+      console.log(res.data);
+
+      if (res.error) {
+        this.$router.push("/authorization");
+      } else {
+        this.notification = res.data.message;
+        this.isMessage = true;
+        this.employees = res.data.data;
+        // this.employees = this.employees.filter(
+        //   employee =>
+        //     employee.first_name !== arrayEmployee[0] &&
+        //     employee.last_name !== arrayEmployee[1]
+        // );
+
+        setTimeout(() => {
+          this.isMessage = false;
+        }, 2000);
+      }
+      // const arrayEmployee = this.employee.trim().split(/\s+/);
+
+      // console.log(this.employees);
+      // localStorage["employees"] = JSON.stringify(this.employees);
+    },
+    async updateEmployee() {
       const arrNewEmployee = this.newEmployee.trim().split(/\s+/);
+      const arrayEmployee = this.employee.trim().split(/\s+/);
       const firstName = arrNewEmployee[0];
       const lastName = arrNewEmployee[1];
-      this.employees = this.employees.map(employee =>
-        employee.first_name === arrayEmployee[0] &&
-        employee.last_name === arrayEmployee[1]
-          ? { first_name: firstName, last_name: lastName }
-          : employee
+      const newEmployee = {
+        firstName: firstName,
+        lastName: lastName
+      };
+      const selectEmployee = this.employees.filter(
+        item =>
+          item.first_name === arrayEmployee[0] &&
+          item.last_name === arrayEmployee[1]
       );
+
+      const response = await fetch(
+        "http://127.0.0.1:7000/api/employees/updateEmployees",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ...selectEmployee,
+            newEmployee,
+            token: localStorage["token"]
+          })
+        }
+      );
+
+      const res = await response.json();
+      console.log(res);
+      this.employees = res.data.data;
+      this.notification = res.message;
+      this.isMessage = true;
       this.newEmployee = "";
-      localStorage["employees"] = JSON.stringify(this.employees);
+      setTimeout(() => {
+        this.isMessage = false;
+      }, 2000);
+
+      // this.employees = this.employees.map(employee =>
+      //   employee.first_name === arrayEmployee[0] &&
+      //   employee.last_name === arrayEmployee[1]
+      //     ? { first_name: firstName, last_name: lastName }
+      //     : employee
+      // );
+
+      // localStorage["employees"] = JSON.stringify(this.employees);
     }
-    // ...mapMutations(['setEmployees'])
   }
 };
 </script>
 
-<!-- styling for the component -->
 <style scoped lang="scss">
+.message {
+  position: absolute;
+  top: 0px;
+  left: 40px;
+  opacity: 0;
+  width: 376px;
+  height: 80px;
+  // margin: auto;
+  background-color: #c7d0f5c6;
+  border-radius: 20px;
+
+  &__text {
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 25px;
+    height: 100%;
+    font-weight: bold;
+    padding: 0px 20px;
+  }
+
+  &__visible {
+    opacity: 1;
+  }
+  &__hide {
+    opacity: 0;
+  }
+}
 .calendly {
   display: flex;
   justify-content: space-around;
-  height: 100vh;
+  height: 90vh;
   padding: 40px 0;
+  position: relative;
 
   &__right {
     width: 35%;
     //margin: 40px auto;
   }
+
   &__center {
     width: 3px;
     background-color: rgba(176, 168, 168, 0.786);
   }
+
   &__left {
     width: 40%;
   }
@@ -249,6 +534,12 @@ export default {
       margin-top: 40px;
     }
   }
+
+  &__link {
+    text-decoration: none;
+    color: white;
+  }
+
   &__autorization {
     display: flex;
     flex-direction: column;
@@ -265,6 +556,7 @@ export default {
   &__btn {
     width: 220px;
     text-align: center;
+
     &-center {
       display: flex;
       margin: auto;
@@ -277,9 +569,19 @@ export default {
     }
   }
 }
+
 .disabled {
   pointer-events: none;
   background-color: rgb(168, 182, 239);
   border: 1px solid rgb(168, 182, 239);
+}
+
+.notification {
+  opacity: 0;
+}
+
+.error {
+  opacity: 1;
+  color: red;
 }
 </style>
