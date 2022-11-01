@@ -158,7 +158,8 @@
       </div>
       <div class="calendly__meets calendly__list-block">
         <h3 class="calendly__autorization__form-title">Choose meeting</h3>
-        <select
+
+        <!-- <select
           class="form-select"
           aria-label="Default select example"
           @change="getMeetings"
@@ -168,7 +169,8 @@
           <option v-for="(meeting, index) of meetings" :key="index">{{
             meeting.name
           }}</option>
-        </select>
+        </select> -->
+        <multiselect v-model="meeting" :options="meetings.map(item => {return item.name})" @input="getMeetings"> </multiselect>
         <button
           type="button"
           class="btn btn-primary autorization__form__button calendly__btn-center "
@@ -182,6 +184,7 @@
         <button
           type="button"
           class="btn btn-primary autorization__form__button calendly__btn-center calendly__btn-reserve"
+          @click="reserveMeeting"
         >
           Reserve meeting
         </button>
@@ -201,8 +204,10 @@
 
 <script>
 import { reactive } from "vue";
+import Multiselect from "vue-multiselect";
 export default {
   name: "Calendly",
+  components: { Multiselect },
   data() {
     return {
       first_name: "",
@@ -358,6 +363,10 @@ export default {
         );
 
         const calendlyEvents = await responseUser.json();
+        this.meetings = await calendlyEvents.collection
+        // this.meetings = await calendlyEvents.collection.map(function(el) {
+        //   return el.name;
+        // });
         const calMeeting = await calendlyEvents.collection.map(item => {
           if (item.name === this.meeting) {
             return item.scheduling_url.trim().split(/\s+/);
@@ -366,7 +375,8 @@ export default {
         });
         const link = await calMeeting.filter(str => str.length !== 0).join();
         this.calendlyLink = await link;
-        this.meetings = await calendlyEvents.collection;
+
+        console.log(this.calendlyLink);
       } else {
         this.meetings = [];
       }
@@ -468,6 +478,75 @@ export default {
       // );
 
       // localStorage["employees"] = JSON.stringify(this.employees);
+    },
+    async reserveMeeting() {
+      let requestUser = await fetch(
+      "http://127.0.0.1:7000/api/user/getZoomInfo",
+      {
+        method: "GET",
+      }
+    );
+    const req = await requestUser.json();
+      // const meetingdetails = {
+      //   topic: "The title of your zoom meeting",
+      //   type: 2,
+      //   start_time: "2022-11-04T10: 21: 57",
+      //   duration: "45",
+      //   timezone: "Europe/Madrid",
+      //   agenda: "test",
+
+      //   recurrence: { type: 1, repeat_interval: 1 },
+      //   settings: {
+      //     host_video: "true",
+      //     participant_video: "true",
+      //     join_before_host: "False",
+      //     mute_upon_entry: "False",
+      //     watermark: "true",
+      //     audio: "voip",
+      //     auto_recording: "cloud"
+      //   }
+      // };
+      //       const res = await fetch("https://api.zoom.us/v2/users/me", {
+      //   headers: {
+      //     accept:
+      //       "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
+      //     "accept-language":
+      //       "uk-UA,uk;q=0.9,en-US;q=0.8,en;q=0.7,zh-TW;q=0.6,zh;q=0.5,ru;q=0.4",
+      //     Authorization:
+      //       "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOm51bGwsImlzcyI6ImE4WEJ4RUx1U0dDS2RrNG9kN3gyX1EiLCJleHAiOjE2Njc4OTQ2MzQsImlhdCI6MTY2NzI4OTgzNX0.kloNW_XxKRGU4cRHLv9cq4cyCwgXEAZL9X0yactDQ38",
+      //     "cache-control": "max-age=0",
+      //     "sec-ch-ua":
+      //       '"Chromium";v="106", "Google Chrome";v="106", "Not;A=Brand";v="99"',
+      //     "sec-ch-ua-mobile": "?0",
+      //     "sec-ch-ua-platform": '"macOS"',
+      //     "sec-fetch-dest": "empty",
+      //     "sec-fetch-mode": "cors",
+      //     "sec-fetch-site": "same-origin",
+      //     "upgrade-insecure-requests": "1"
+      //   },
+      //   referrer: "https://api.zoom.us/v2/users/me",
+      //   referrerPolicy: "strict-origin-when-cross-origin",
+      //   body: null,
+      //   method: "GET",
+      //   mode: "cors",
+      //   credentials: "include"
+      // });
+
+      
+      // const response = await fetch(
+      //   "https://api.zoom.us/v2/users/me",
+      //   {
+      //     method: "GET",
+      //     headers: {
+      //       // "Content-Type": "application/json",
+      //       Authorization:
+      //         "Bearer eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOm51bGwsImlzcyI6ImE4WEJ4RUx1U0dDS2RrNG9kN3gyX1EiLCJleHAiOjE2Njc4OTQ2MzQsImlhdCI6MTY2NzI4OTgzNX0.kloNW_XxKRGU4cRHLv9cq4cyCwgXEAZL9X0yactDQ38"
+      //     }
+      //     // body: JSON.stringify(meetingdetails)
+      //   }
+      // );
+      //const res = await response.json();
+      console.log("zoom", response);
     }
   }
 };
@@ -585,3 +664,4 @@ export default {
   color: red;
 }
 </style>
+<style src="vue-multiselect/dist/vue-multiselect.min.css"></style>

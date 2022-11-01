@@ -12,10 +12,12 @@
     "deploy": "gh-pages -d build"
   },
   "dependencies": {
+    "@myena/advanced-select": "^1.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "jsonwebtoken": "^8.5.1",
     "vue": "^2.5.2",
+    "vue-multiselect": "^2.1.6",
     "vue-router": "^3.0.1",
     "vuex": "^4.0.2"
   },
